@@ -207,6 +207,7 @@ body{
   background:var(--bg); color:var(--ink);
   font-family:var(--font-sans); font-size:var(--fs-body); line-height:1.55;
   -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  overflow-x:hidden;   /* 关闭的抽屉在视口右侧外，防止其撑出横向滚动（P1）*/
 }
 a{color:inherit}
 .mono{font-family:var(--font-mono)}
@@ -221,10 +222,10 @@ a{color:inherit}
   backdrop-filter:saturate(140%) blur(8px);
   border-bottom:1px solid var(--border);
 }
-.brand{display:flex; align-items:center; gap:10px; font-weight:600; letter-spacing:-0.01em; white-space:nowrap}
+.brand{display:flex; align-items:center; gap:10px; margin:0; font-size:var(--fs-body); font-weight:600; letter-spacing:-0.01em; white-space:nowrap}
 .brand .mark{color:var(--accent); display:flex}
 .brand .tag{color:var(--faint); font-weight:500; font-size:var(--fs-cap)}
-.search{position:relative; flex:1; max-width:440px}
+.search{position:relative; flex:1; min-width:0; max-width:440px}
 .search svg{position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--faint); pointer-events:none}
 .search input{
   width:100%; padding:9px 12px 9px 36px;
@@ -277,7 +278,7 @@ a{color:inherit}
 
 /* ── 网格 / 卡片 ── */
 .grid{
-  display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));
   gap:18px; padding:22px clamp(16px,4vw,40px) 40px;
   max-width:1320px; margin:0 auto;
 }
@@ -362,6 +363,13 @@ footer{padding:22px clamp(16px,4vw,40px) 40px; border-top:1px solid var(--border
 @media (prefers-reduced-motion:reduce){
   *{animation:none !important; transition:none !important}
 }
+/* 触屏设备放大命中区（P2：触控目标）。仅对 coarse 指针生效，不影响桌面观感 */
+@media (pointer:coarse){
+  .chip,.sort select,.dlinks a,#q{min-height:40px}
+  .chip{padding:9px 14px}
+  .ext,.dclose,.tagpill button{min-width:40px; min-height:40px; justify-content:center}
+  .tag{min-height:32px; display:inline-flex; align-items:center}
+}
 @media (max-width:560px){
   .count{display:none}
   .sort{margin-left:0}
@@ -370,10 +378,10 @@ footer{padding:22px clamp(16px,4vw,40px) 40px; border-top:1px solid var(--border
 </head>
 <body>
 <header class="topbar">
-  <div class="brand">
+  <h1 class="brand">
     <span class="mark" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="13" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 16h.01"/></svg></span>
     project-vault <span class="tag mono">notes</span>
-  </div>
+  </h1>
   <div class="search">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
     <input id="q" type="search" placeholder="搜索项目、摘要、标签…" autocomplete="off" aria-label="搜索">
