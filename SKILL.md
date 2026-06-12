@@ -87,7 +87,8 @@ Learning-Resource, Other
 - `local`：纯本地，`pull/push` 仅重建索引、不联网。**默认，单机即用。**
 - `git`：多机共享。各机 clone 同一远程库，`pull` = `git pull --rebase` + 重建索引，
   `push` = 提交并 `git push`。需先 `git remote add origin <url>`。
-- `http`：上云（Phase 3，待用户提供云主机 IP 后实现）。指向云端 HTTP 服务上传/拉取。
+- `http`：云端备份/中转。对接 `server/vault_server.py`，`push/pull` 走 HTTP 上传/下载。
+  需在 `http.endpoint` 填云主机地址、`http.token` 填令牌（详见 `server/README.md`）。
 
 没有 `vault.config.json` 时自动回退 `local`。配置模板见 `vault.config.example.json`。
 

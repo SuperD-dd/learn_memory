@@ -13,6 +13,8 @@ import json
 import os
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 
 # Windows 默认控制台编码可能是 GBK，重设为 UTF-8 避免中文乱码 / UnicodeEncodeError
 for _stream in (sys.stdout, sys.stderr):
@@ -22,7 +24,9 @@ for _stream in (sys.stdout, sys.stderr):
         pass
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG_PATH = os.path.join(REPO_ROOT, "vault.config.json")
+# 允许用环境变量覆盖配置路径（便于测试/多 vault），默认仓库根的 vault.config.json
+CONFIG_PATH = os.environ.get("VAULT_CONFIG", os.path.join(REPO_ROOT, "vault.config.json"))
+PROJECTS_DIR = os.path.join(REPO_ROOT, "projects")
 BUILD_INDEX = os.path.join(REPO_ROOT, "scripts", "build_index.py")
 
 
@@ -108,19 +112,65 @@ def git_push(cfg):
                   f"（git remote add {remote} <url> 后即可推送）")
 
 
-# ---------- http (Phase 3：待云主机就绪后补全) ----------
-def http_pull(cfg):
-    raise NotImplementedError(
-        "http 后端尚未实现（Phase 3）。待你提供云主机 IP 后，"
-        "在云端部署 HTTP 服务并在此实现 GET /projects 拉取。")
+# ---------- http（云端备份/中转，对接 server/vault_server.py） ----------
+def _http_endpoint(cfg):
+    h = cfg.get("http", {})
+    endpoint = (h.get("endpoint") or "").rstrip("/")
+    if not endpoint or "<" in endpoint:
+        raise SystemExit(
+            "[sync] http 后端未配置好：请在 vault.config.json 的 http.endpoint "
+            "填入你的云主机地址，如 http://1.2.3.4:8000")
+    return endpoint, h.get("token") or ""
+
+
+def _http_request(method, url, token, data=None, ctype="text/markdown; charset=utf-8"):
+    req = urllib.request.Request(url, data=data, method=method)
+    if token:
+        req.add_header("X-Vault-Token", token)
+    if data is not None:
+        req.add_header("Content-Type", ctype)
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return resp.status, resp.read()
+    except urllib.error.HTTPError as e:
+        return e.code, e.read()
+    except urllib.error.URLError as e:
+        raise SystemExit(f"[sync] 无法连接云端 {url}：{e.reason}")
 
 
 def http_push(cfg):
-    # TODO(Phase 3): 读取 projects/*.md，POST 到 cfg['http']['endpoint'] /projects，
-    # 带上 cfg['http']['token'] 鉴权。云端落盘存文件（文件仍是真相源）。
-    raise NotImplementedError(
-        "http 后端尚未实现（Phase 3）。待你提供云主机 IP 后，"
-        "在此实现 POST {endpoint}/projects 上传。")
+    endpoint, token = _http_endpoint(cfg)
+    files = sorted(f for f in os.listdir(PROJECTS_DIR) if f.endswith(".md"))
+    ok = 0
+    for fname in files:
+        slug = fname[:-3]
+        data = open(os.path.join(PROJECTS_DIR, fname), "rb").read()
+        status, body = _http_request("PUT", f"{endpoint}/projects/{slug}", token, data=data)
+        if status == 200:
+            ok += 1
+        else:
+            print(f"[sync] 上传 {slug} 失败：HTTP {status} {body[:120]!r}", file=sys.stderr)
+    print(f"[sync] 已上传 {ok}/{len(files)} 个项目到 {endpoint}")
+
+
+def http_pull(cfg):
+    endpoint, token = _http_endpoint(cfg)
+    status, body = _http_request("GET", f"{endpoint}/projects", token)
+    if status != 200:
+        raise SystemExit(f"[sync] 拉取列表失败：HTTP {status} {body[:120]!r}")
+    slugs = [p["slug"] for p in json.loads(body).get("projects", [])]
+    os.makedirs(PROJECTS_DIR, exist_ok=True)
+    got = 0
+    for slug in slugs:
+        st, content = _http_request("GET", f"{endpoint}/projects/{slug}", token)
+        if st == 200:
+            with open(os.path.join(PROJECTS_DIR, slug + ".md"), "wb") as f:
+                f.write(content)
+            got += 1
+        else:
+            print(f"[sync] 下载 {slug} 失败：HTTP {st}", file=sys.stderr)
+    print(f"[sync] 已从 {endpoint} 拉取 {got}/{len(slugs)} 个项目")
+    rebuild_index()
 
 
 BACKENDS = {

@@ -4,6 +4,9 @@ index/
 # 每台机器各自的配置（含机器名/可能的 token），不入库
 vault.config.json
 
+# 云端服务在仓库内运行时的数据目录（若 VAULT_DIR 指向仓库内）
+server/vault_data/
+
 # 常见杂项
 __pycache__/
 *.pyc

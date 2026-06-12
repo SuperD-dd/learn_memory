@@ -61,11 +61,18 @@ python scripts/build_index.py
 
 > 迁移 = 换机器只需 `git clone` 这一个仓库；不存在数据格式转换。
 
-## 上云（http 后端，Phase 3）
+## 上云（http 后端，Phase 3）✅ 已就绪
 
-待你提供云主机 IP 后：在云主机部署一个小 HTTP 服务（接收并落盘 `projects/*.md`，
-文件仍是真相源），补全 `sync.py` 的 `http` 适配器，把 `vault.config.json` 的
-`backend` 改成 `"http"`、`http.endpoint` 指向云主机即可。当前 `sync.py` 已预留接口骨架。
+云端服务 `server/vault_server.py`（仅标准库）+ `sync.py` 的 `http` 适配器已完成并通过自测。
+定位是「额外的云端备份/中转」，文件仍是真相源；与 `git` 后端可并存。
+
+1. 在云主机（装好 Python 3 即可，无需 pip）启动服务并设令牌——详见 `server/README.md`。
+2. 在本机 `vault.config.json` 把 `backend` 改成 `"http"`，
+   `http.endpoint` 填 `http://你的云主机IP:8000`、`http.token` 填与服务端一致的令牌。
+3. `python scripts/sync.py push`（本地→云端）/ `pull`（云端→本地）。
+
+> `endpoint` 还是 `http://<cloud-ip>:8000` 占位时，`sync.py` 会直接提示你去填，不会瞎连。
+> 自测：`python server/_roundtrip_test.py`。
 
 ## 依赖
 
