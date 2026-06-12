@@ -194,6 +194,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   --accent-ink:oklch(0.22 0.03 80);
   /* 形状：卡片 14 / 输入 10 / 胶囊 full（已锁定，全页一致） */
   --r-card:14px; --r-input:10px;
+  /* 字号阶梯：克制为 4 档，拉开对比（impeccable flat-type-hierarchy 修复）*/
+  --fs-cap:12px; --fs-body:14px; --fs-title:18px; --fs-display:23px;
   --font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
   --font-mono:ui-monospace,"SF Mono","Cascadia Code","Segoe UI Mono",Consolas,monospace;
   /* z-index 语义层级 */
@@ -203,7 +205,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 html,body{margin:0}
 body{
   background:var(--bg); color:var(--ink);
-  font-family:var(--font-sans); font-size:15px; line-height:1.55;
+  font-family:var(--font-sans); font-size:var(--fs-body); line-height:1.55;
   -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
 }
 a{color:inherit}
@@ -221,7 +223,7 @@ a{color:inherit}
 }
 .brand{display:flex; align-items:center; gap:10px; font-weight:600; letter-spacing:-0.01em; white-space:nowrap}
 .brand .mark{color:var(--accent); display:flex}
-.brand .tag{color:var(--faint); font-weight:500; font-size:12px}
+.brand .tag{color:var(--faint); font-weight:500; font-size:var(--fs-cap)}
 .search{position:relative; flex:1; max-width:440px}
 .search svg{position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--faint); pointer-events:none}
 .search input{
@@ -232,7 +234,9 @@ a{color:inherit}
 }
 .search input::placeholder{color:var(--faint)}
 .search input:focus{border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in oklch, var(--accent) 25%, transparent)}
-.count{margin-left:auto; color:var(--faint); font-size:13px; white-space:nowrap}
+/* 键盘焦点环（a11y）—— 所有可交互控件可见焦点 */
+.chip:focus-visible,.sort select:focus-visible,.dclose:focus-visible,.dlinks a:focus-visible,.ext:focus-visible,.tag:focus-visible,#reset:focus-visible,.tagpill button:focus-visible{outline:none; box-shadow:0 0 0 3px color-mix(in oklch,var(--accent) 32%,transparent)}
+.count{margin-left:auto; color:var(--faint); font-size:var(--fs-cap); white-space:nowrap}
 .count b{color:var(--ink); font-weight:600}
 
 /* ── 工具栏 / 筛选 ── */
@@ -242,10 +246,10 @@ a{color:inherit}
   border-bottom:1px solid var(--border);
 }
 .fgroup{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
-.flabel{color:var(--faint); font-size:11.5px; letter-spacing:.02em}
+.flabel{color:var(--faint); font-size:var(--fs-cap); letter-spacing:.02em}
 .chip{
-  font-family:var(--font-mono); font-size:12.5px;
-  padding:4px 11px; border-radius:999px; cursor:pointer;
+  font-family:var(--font-mono); font-size:var(--fs-cap);
+  padding:5px 12px; border-radius:999px; cursor:pointer;
   background:var(--surface); color:var(--muted);
   border:1px solid var(--border); transition:.14s;
 }
@@ -253,9 +257,9 @@ a{color:inherit}
 .chip.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600}
 .chip .n{opacity:.6; margin-left:5px}
 .chip.active .n{opacity:.7}
-.sort{margin-left:auto; display:flex; align-items:center; gap:8px; color:var(--faint); font-size:12.5px}
+.sort{margin-left:auto; display:flex; align-items:center; gap:8px; color:var(--faint); font-size:var(--fs-cap)}
 .sort select{
-  font:inherit; font-size:13px; padding:6px 10px; border-radius:var(--r-input);
+  font:inherit; font-size:var(--fs-body); padding:6px 10px; border-radius:var(--r-input);
   background:var(--surface); color:var(--ink); border:1px solid var(--border); outline:none; cursor:pointer;
 }
 .sort select:focus{border-color:var(--accent)}
@@ -263,7 +267,7 @@ a{color:inherit}
 .tagbar{padding:0 clamp(16px,4vw,40px); margin-top:14px}
 .tagbar[hidden]{display:none}
 .tagpill{
-  display:inline-flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:12.5px;
+  display:inline-flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:var(--fs-cap);
   padding:5px 8px 5px 12px; border-radius:999px;
   background:color-mix(in oklch, var(--accent) 14%, var(--surface));
   border:1px solid color-mix(in oklch, var(--accent) 40%, var(--border)); color:var(--ink);
@@ -287,27 +291,27 @@ a{color:inherit}
   box-shadow:0 12px 28px -16px oklch(0 0 0 / .8), 0 2px 6px -4px oklch(0 0 0 / .6)}
 .card:focus-visible{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in oklch,var(--accent) 25%,transparent)}
 .card .top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
-.card h2{margin:0; font-size:17px; font-weight:650; letter-spacing:-0.01em; line-height:1.25; text-wrap:balance}
+.card h2{margin:0; font-size:var(--fs-title); font-weight:650; letter-spacing:-0.01em; line-height:1.25; text-wrap:balance}
 .card .ext{color:var(--faint); display:flex; padding:2px; border-radius:6px; flex:none; margin:-2px}
 .card .ext:hover{color:var(--accent); background:var(--surface-2)}
-.metarow{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-family:var(--font-mono); font-size:12px; color:var(--muted)}
+.metarow{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-family:var(--font-mono); font-size:var(--fs-cap); color:var(--muted)}
 .lang{color:var(--ink)}
 .stars{color:var(--accent); letter-spacing:1px}
 .kind{color:var(--faint)}
 .kind::before{content:"·"; margin-right:10px; color:var(--border-strong)}
-.summary{margin:0; color:var(--muted); font-size:13.5px; line-height:1.5;
+.summary{margin:0; color:var(--muted); font-size:var(--fs-body); line-height:1.5;
   display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden}
 .tags{display:flex; flex-wrap:wrap; gap:6px}
-.tag{font-family:var(--font-mono); font-size:11.5px; color:var(--faint);
+.tag{font-family:var(--font-mono); font-size:var(--fs-cap); color:var(--faint);
   padding:2px 8px; border-radius:999px; border:1px solid var(--border); transition:.14s}
 .tag:hover{color:var(--accent); border-color:color-mix(in oklch,var(--accent) 45%,var(--border))}
 .cardfoot{margin-top:2px; padding-top:11px; border-top:1px solid var(--border);
-  display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:11.5px; color:var(--faint)}
+  display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:var(--fs-cap); color:var(--faint)}
 
 /* ── 空状态 ── */
 .empty{display:none; flex-direction:column; align-items:center; gap:14px; padding:80px 20px; text-align:center; color:var(--muted)}
 .empty[data-show]{display:flex}
-.empty .big{font-size:18px; color:var(--ink); font-weight:600}
+.empty .big{font-size:var(--fs-title); color:var(--ink); font-weight:600}
 .empty button{font:inherit; padding:8px 16px; border-radius:999px; cursor:pointer;
   background:var(--accent); color:var(--accent-ink); border:none; font-weight:600}
 
@@ -322,32 +326,32 @@ a{color:inherit}
 .drawer[data-open]{transform:translateX(0)}
 .dhead{padding:22px 24px 16px; border-bottom:1px solid var(--border)}
 .dhead .row{display:flex; align-items:flex-start; justify-content:space-between; gap:12px}
-.dhead h2{margin:0; font-size:22px; letter-spacing:-0.02em; text-wrap:balance}
+.dhead h2{margin:0; font-size:var(--fs-display); letter-spacing:-0.02em; text-wrap:balance}
 .dclose{background:var(--surface-2); border:1px solid var(--border); color:var(--muted);
   width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:none}
 .dclose:hover{color:var(--ink); border-color:var(--border-strong)}
-.dmeta{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px; font-family:var(--font-mono); font-size:12.5px; color:var(--muted)}
+.dmeta{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px; font-family:var(--font-mono); font-size:var(--fs-cap); color:var(--muted)}
 .dlinks{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap}
-.dlinks a{font-family:var(--font-mono); font-size:12.5px; text-decoration:none;
+.dlinks a{font-family:var(--font-mono); font-size:var(--fs-cap); text-decoration:none;
   padding:7px 13px; border-radius:999px; border:1px solid var(--border); color:var(--muted); display:inline-flex; align-items:center; gap:7px; transition:.14s}
 .dlinks a.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600}
 .dlinks a:not(.primary):hover{color:var(--ink); border-color:var(--border-strong)}
 .dbody{padding:8px 24px 40px; overflow-y:auto}
-.dbody h3{font-size:13px; letter-spacing:.04em; color:var(--accent); margin:26px 0 10px; font-weight:600}
-.dbody h4{font-size:14px; margin:18px 0 8px}
+.dbody h3{font-size:var(--fs-cap); letter-spacing:.06em; text-transform:uppercase; color:var(--accent); margin:26px 0 10px; font-weight:600}
+.dbody h4{font-size:var(--fs-body); margin:18px 0 8px}
 .dbody p{margin:0 0 12px; color:var(--muted); max-width:62ch}
 .dbody ul{margin:0 0 14px; padding-left:18px}
 .dbody li{margin:0 0 6px; color:var(--muted); max-width:62ch}
 .dbody blockquote{margin:0 0 18px; padding:12px 16px; border-radius:10px;
-  background:var(--surface-2); color:var(--ink); font-size:14.5px; line-height:1.5}
-.dbody code{font-family:var(--font-mono); font-size:.88em; background:var(--surface-2);
+  background:var(--surface-2); color:var(--ink); font-size:var(--fs-body); line-height:1.55}
+.dbody code{font-family:var(--font-mono); font-size:var(--fs-cap); background:var(--surface-2);
   padding:1px 6px; border-radius:5px; color:var(--ink)}
 .dbody strong{color:var(--ink); font-weight:650}
 .dbody .wikilink{color:var(--accent); text-decoration:none; border-bottom:1px dashed color-mix(in oklch,var(--accent) 50%,transparent); cursor:pointer}
 .dbody .wikilink.dead{color:var(--faint); border-bottom-style:dotted; cursor:default}
 
 footer{padding:22px clamp(16px,4vw,40px) 40px; border-top:1px solid var(--border);
-  color:var(--faint); font-family:var(--font-mono); font-size:12px; display:flex; flex-wrap:wrap; gap:6px 16px; justify-content:space-between}
+  color:var(--faint); font-family:var(--font-mono); font-size:var(--fs-cap); display:flex; flex-wrap:wrap; gap:6px 16px; justify-content:space-between}
 
 /* ── 入场动效（低档）：只做位移，不用 opacity 门控可见性
    （否则无头渲染/隐藏标签页里 reveal 不触发会整页空白 —— impeccable 规则）── */
