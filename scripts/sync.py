@@ -71,6 +71,15 @@ def git_pull(cfg):
     rebuild_index()
 
 
+def git_identity_ok():
+    for key in ("user.name", "user.email"):
+        val = subprocess.run(["git", "config", key], cwd=REPO_ROOT,
+                             capture_output=True, text=True).stdout.strip()
+        if not val:
+            return False
+    return True
+
+
 def git_push(cfg):
     g = cfg.get("git", {})
     remote = g.get("remote", "origin")
@@ -81,6 +90,12 @@ def git_push(cfg):
     code = subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=REPO_ROOT).returncode
     if code == 0:
         print("[sync] 无待提交改动。")
+    elif not git_identity_ok():
+        print("[sync] 本机未配置 git 身份，无法提交。请先运行一次：\n"
+              '        git config --global user.name "你的名字"\n'
+              '        git config --global user.email "你的邮箱"\n'
+              "      （改动已暂存，配置后重跑 sync.py push 即可提交）", file=sys.stderr)
+        return
     else:
         run(["git", "commit", "-m", f"vault: update from {machine}"])
     if g.get("auto_push", True):

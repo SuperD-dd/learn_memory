@@ -1,0 +1,5 @@
+# 跨机器（Windows/Linux/云主机）统一换行，避免无意义的 CRLF/LF 差异
+* text=auto eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
