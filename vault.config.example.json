@@ -1,0 +1,13 @@
+{
+  "backend": "local",
+  "machine_id": "请改成本机名，如 desktop-home / laptop-work",
+  "git": {
+    "remote": "origin",
+    "branch": "main",
+    "auto_push": true
+  },
+  "http": {
+    "endpoint": "http://<cloud-ip>:8000",
+    "token": ""
+  }
+}
