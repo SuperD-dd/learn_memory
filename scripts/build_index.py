@@ -178,6 +178,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>project-vault</title>
+<script>/* 在首屏渲染前定主题，避免闪烁：localStorage 优先，否则跟随系统 */
+(function(){try{var t=localStorage.getItem('pv-theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();</script>
 <style>
 /* ── 配色：冷调近黑中性基底 + 单一琥珀强调（全页锁定），OKLCH ── */
 :root{
@@ -192,6 +194,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   --accent:oklch(0.80 0.13 78);
   --accent-press:oklch(0.72 0.13 78);
   --accent-ink:oklch(0.22 0.03 80);
+  --accent-text:oklch(0.82 0.14 78);   /* 强调色用于文字/图标（链接、星级、小标题）*/
+  --shadow:0 12px 28px -16px oklch(0 0 0 / .85), 0 2px 6px -4px oklch(0 0 0 / .6);
+  --scrim:oklch(0 0 0 / .55);
   /* 形状：卡片 14 / 输入 10 / 胶囊 full（已锁定，全页一致） */
   --r-card:14px; --r-input:10px;
   /* 字号阶梯：克制为 4 档，拉开对比（impeccable flat-type-hierarchy 修复）*/
@@ -200,6 +205,25 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   --font-mono:ui-monospace,"SF Mono","Cascadia Code","Segoe UI Mono",Consolas,monospace;
   /* z-index 语义层级 */
   --z-sticky:100; --z-scrim:200; --z-drawer:300;
+  color-scheme:dark;
+}
+/* ── 浅色主题：冷调真白（非米色 AI 默认）；强调色仍锁定琥珀，
+   文字版用更深琥珀保证白底对比；阴影/遮罩同样 token 化 ── */
+html[data-theme="light"]{
+  color-scheme:light;
+  --bg:oklch(0.966 0.002 270);
+  --surface:oklch(0.999 0.001 270);
+  --surface-2:oklch(0.945 0.004 270);
+  --border:oklch(0.90 0.005 270);
+  --border-strong:oklch(0.80 0.008 270);
+  --ink:oklch(0.255 0.012 270);
+  --muted:oklch(0.44 0.012 270);
+  --faint:oklch(0.495 0.012 270);
+  --accent:oklch(0.72 0.15 70);
+  --accent-press:oklch(0.64 0.15 70);
+  --accent-text:oklch(0.515 0.15 62);
+  --shadow:0 12px 28px -16px oklch(0.5 0.03 270 / .22), 0 2px 6px -4px oklch(0.5 0.03 270 / .14);
+  --scrim:oklch(0.40 0.02 270 / .35);
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -237,7 +261,15 @@ a{color:inherit}
 .search input:focus{border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in oklch, var(--accent) 25%, transparent)}
 /* 键盘焦点环（a11y）—— 所有可交互控件可见焦点 */
 .chip:focus-visible,.sort select:focus-visible,.dclose:focus-visible,.dlinks a:focus-visible,.ext:focus-visible,.tag:focus-visible,#reset:focus-visible,.tagpill button:focus-visible{outline:none; box-shadow:0 0 0 3px color-mix(in oklch,var(--accent) 32%,transparent)}
-.count{margin-left:auto; color:var(--faint); font-size:var(--fs-cap); white-space:nowrap}
+.count{margin-left:12px; color:var(--faint); font-size:var(--fs-cap); white-space:nowrap}
+.theme-btn{margin-left:auto; flex:none; width:36px; height:36px; border-radius:9px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--surface); color:var(--muted); border:1px solid var(--border); transition:.14s}
+.theme-btn:hover{color:var(--ink); border-color:var(--border-strong)}
+.theme-btn:focus-visible{outline:none; box-shadow:0 0 0 3px color-mix(in oklch,var(--accent) 32%,transparent)}
+.theme-btn .moon{display:none}
+html[data-theme="light"] .theme-btn .sun{display:none}
+html[data-theme="light"] .theme-btn .moon{display:block}
 .count b{color:var(--ink); font-weight:600}
 
 /* ── 工具栏 / 筛选 ── */
@@ -288,16 +320,15 @@ a{color:inherit}
   padding:18px 18px 14px; cursor:pointer;
   transition:transform .16s cubic-bezier(.2,.7,.3,1), border-color .16s, box-shadow .16s;
 }
-.card:hover{transform:translateY(-3px); border-color:var(--border-strong);
-  box-shadow:0 12px 28px -16px oklch(0 0 0 / .8), 0 2px 6px -4px oklch(0 0 0 / .6)}
+.card:hover{transform:translateY(-3px); border-color:var(--border-strong); box-shadow:var(--shadow)}
 .card:focus-visible{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in oklch,var(--accent) 25%,transparent)}
 .card .top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
 .card h2{margin:0; font-size:var(--fs-title); font-weight:650; letter-spacing:-0.01em; line-height:1.25; text-wrap:balance}
 .card .ext{color:var(--faint); display:flex; padding:2px; border-radius:6px; flex:none; margin:-2px}
-.card .ext:hover{color:var(--accent); background:var(--surface-2)}
+.card .ext:hover{color:var(--accent-text); background:var(--surface-2)}
 .metarow{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-family:var(--font-mono); font-size:var(--fs-cap); color:var(--muted)}
 .lang{color:var(--ink)}
-.stars{color:var(--accent); letter-spacing:1px}
+.stars{color:var(--accent-text); letter-spacing:1px}
 .kind{color:var(--faint)}
 .kind::before{content:"·"; margin-right:10px; color:var(--border-strong)}
 .summary{margin:0; color:var(--muted); font-size:var(--fs-body); line-height:1.5;
@@ -305,7 +336,7 @@ a{color:inherit}
 .tags{display:flex; flex-wrap:wrap; gap:6px}
 .tag{font-family:var(--font-mono); font-size:var(--fs-cap); color:var(--faint);
   padding:2px 8px; border-radius:999px; border:1px solid var(--border); transition:.14s}
-.tag:hover{color:var(--accent); border-color:color-mix(in oklch,var(--accent) 45%,var(--border))}
+.tag:hover{color:var(--accent-text); border-color:color-mix(in oklch,var(--accent) 45%,var(--border))}
 .cardfoot{margin-top:2px; padding-top:11px; border-top:1px solid var(--border);
   display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:var(--fs-cap); color:var(--faint)}
 
@@ -317,7 +348,7 @@ a{color:inherit}
   background:var(--accent); color:var(--accent-ink); border:none; font-weight:600}
 
 /* ── 详情抽屉 ── */
-.scrim{position:fixed; inset:0; z-index:var(--z-scrim); background:oklch(0 0 0 / .55);
+.scrim{position:fixed; inset:0; z-index:var(--z-scrim); background:var(--scrim);
   opacity:0; visibility:hidden; transition:opacity .2s, visibility .2s}
 .scrim[data-show]{opacity:1; visibility:visible}
 .drawer{position:fixed; top:0; right:0; bottom:0; z-index:var(--z-drawer);
@@ -338,7 +369,7 @@ a{color:inherit}
 .dlinks a.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600}
 .dlinks a:not(.primary):hover{color:var(--ink); border-color:var(--border-strong)}
 .dbody{padding:8px 24px 40px; overflow-y:auto}
-.dbody h3{font-size:var(--fs-cap); letter-spacing:.06em; text-transform:uppercase; color:var(--accent); margin:26px 0 10px; font-weight:600}
+.dbody h3{font-size:var(--fs-cap); letter-spacing:.06em; text-transform:uppercase; color:var(--accent-text); margin:26px 0 10px; font-weight:600}
 .dbody h4{font-size:var(--fs-body); margin:18px 0 8px}
 .dbody p{margin:0 0 12px; color:var(--muted); max-width:62ch}
 .dbody ul{margin:0 0 14px; padding-left:18px}
@@ -348,7 +379,7 @@ a{color:inherit}
 .dbody code{font-family:var(--font-mono); font-size:var(--fs-cap); background:var(--surface-2);
   padding:1px 6px; border-radius:5px; color:var(--ink)}
 .dbody strong{color:var(--ink); font-weight:650}
-.dbody .wikilink{color:var(--accent); text-decoration:none; border-bottom:1px dashed color-mix(in oklch,var(--accent) 50%,transparent); cursor:pointer}
+.dbody .wikilink{color:var(--accent-text); text-decoration:none; border-bottom:1px dashed color-mix(in oklch,var(--accent) 50%,transparent); cursor:pointer}
 .dbody .wikilink.dead{color:var(--faint); border-bottom-style:dotted; cursor:default}
 
 footer{padding:22px clamp(16px,4vw,40px) 40px; border-top:1px solid var(--border);
@@ -386,6 +417,10 @@ footer{padding:22px clamp(16px,4vw,40px) 40px; border-top:1px solid var(--border
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
     <input id="q" type="search" placeholder="搜索项目、摘要、标签…" autocomplete="off" aria-label="搜索">
   </div>
+  <button class="theme-btn" id="theme" aria-label="切换深色/浅色主题" title="切换深色/浅色">
+    <svg class="sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/></svg>
+    <svg class="moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8Z"/></svg>
+  </button>
   <div class="count"><b id="shown">0</b> / <span id="total">0</span></div>
 </header>
 
@@ -526,7 +561,7 @@ function openDrawer(slug){
   const p=BY_SLUG[slug]; if(!p) return;
   document.getElementById("dname").textContent=p.name;
   document.getElementById("dmeta").innerHTML=
-    `<span class="lang" style="color:var(--ink)">${esc(p.language)}</span><span class="stars" style="color:var(--accent)">${stars(p.rating)}</span><span class="kind">${esc(p.category)}</span>${p.stars?`<span class="kind">★ ${esc(p.stars)}</span>`:""}`;
+    `<span class="lang" style="color:var(--ink)">${esc(p.language)}</span><span class="stars">${stars(p.rating)}</span><span class="kind">${esc(p.category)}</span>${p.stars?`<span class="kind">★ ${esc(p.stars)}</span>`:""}`;
   document.getElementById("dlinks").innerHTML=
     `<a class="primary" href="${esc(p.url)}" target="_blank" rel="noopener">在 GitHub 打开 ↗</a>`+
     `<a href="../projects/${esc(p.slug)}.md" target="_blank" rel="noopener">查看原始笔记 .md</a>`;
@@ -556,6 +591,11 @@ scrim.addEventListener("click", closeDrawer);
 document.getElementById("dclose").addEventListener("click", closeDrawer);
 document.getElementById("q").addEventListener("input", e=>{ state.q=e.target.value; render(); });
 document.getElementById("sort").addEventListener("change", e=>{ state.sort=e.target.value; render(); });
+document.getElementById("theme").addEventListener("click", ()=>{
+  const next = document.documentElement.dataset.theme==="light" ? "dark" : "light";
+  document.documentElement.dataset.theme = next;
+  try{ localStorage.setItem("pv-theme", next); }catch(e){}
+});
 document.getElementById("reset").addEventListener("click", ()=>{ state.q=state.lang=state.cat="all"; state.q=""; state.lang="all"; state.cat="all"; state.tag=null; document.getElementById("q").value=""; render(); });
 
 render();
