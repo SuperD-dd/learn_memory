@@ -112,6 +112,8 @@ def load_projects():
         meta["slug"] = slug
         meta["summary"] = extract_summary(body)
         meta["body"] = body.strip()
+        archived = meta.get("via") == "eryajf-weekly" or meta.get("status") == "archived"
+        meta["source_kind"] = "归档" if archived else "精选"
         projects.append(meta)
     return projects, warnings
 
@@ -339,6 +341,7 @@ html[data-theme="light"] .theme-btn .moon{display:block}
 .tag:hover{color:var(--accent-text); border-color:color-mix(in oklch,var(--accent) 45%,var(--border))}
 .cardfoot{margin-top:2px; padding-top:11px; border-top:1px solid var(--border);
   display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:var(--fs-cap); color:var(--faint)}
+.cardfoot .arch{border:1px solid var(--border); border-radius:999px; padding:1px 8px}
 
 /* ── 空状态 ── */
 .empty{display:none; flex-direction:column; align-items:center; gap:14px; padding:80px 20px; text-align:center; color:var(--muted)}
@@ -427,6 +430,7 @@ footer{padding:22px clamp(16px,4vw,40px) 40px; border-top:1px solid var(--border
 <div class="toolbar">
   <div class="fgroup"><span class="flabel mono">language</span><div id="langF" class="fgroup"></div></div>
   <div class="fgroup"><span class="flabel mono">category</span><div id="catF" class="fgroup"></div></div>
+  <div class="fgroup"><span class="flabel mono">source</span><div id="srcF" class="fgroup"></div></div>
   <label class="sort mono">sort
     <select id="sort">
       <option value="date">最近收藏</option>
@@ -465,7 +469,8 @@ footer{padding:22px clamp(16px,4vw,40px) 40px; border-top:1px solid var(--border
 <script>
 const DATA = __DATA_JSON__;
 const BY_SLUG = Object.fromEntries(DATA.map(p => [p.slug, p]));
-const state = { q:"", lang:"all", cat:"all", tag:null, sort:"date" };
+const state = { q:"", lang:"all", cat:"all", src:"all", tag:null, sort:"date" };
+const kind = p => (p.via==="eryajf-weekly"||p.status==="archived") ? "archived" : "curated";
 
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const stars = n => { n = Math.max(0, Math.min(5, parseInt(n)||0)); return "★".repeat(n) + "☆".repeat(5-n); };
@@ -485,6 +490,9 @@ function renderFilters(){
     chip("All","all","lang",DATA.length) + Object.keys(lc).sort().map(l=>chip(l,l,"lang",lc[l])).join("");
   document.getElementById("catF").innerHTML =
     chip("All","all","cat",DATA.length) + Object.keys(cc).sort().map(c=>chip(c,c,"cat",cc[c])).join("");
+  const nCur = DATA.filter(p=>kind(p)==="curated").length, nArc = DATA.length-nCur;
+  document.getElementById("srcF").innerHTML =
+    chip("全部","all","src",DATA.length)+chip("精选","curated","src",nCur)+chip("归档","archived","src",nArc);
   const tb = document.getElementById("tagbar");
   if(state.tag){ tb.hidden=false;
     tb.innerHTML = `<span class="tagpill">#${esc(state.tag)} <button id="tagclr" aria-label="清除标签筛选"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6 6 18"/></svg></button></span>`;
@@ -496,6 +504,7 @@ function filtered(){
   let list = DATA.filter(p=>{
     if(state.lang!=="all" && p.language!==state.lang) return false;
     if(state.cat!=="all" && p.category!==state.cat) return false;
+    if(state.src!=="all" && kind(p)!==state.src) return false;
     if(state.tag && !(p.tags||[]).includes(state.tag)) return false;
     if(q){
       const hay = [p.name,p.summary,p.language,p.category,(p.tags||[]).join(" ")].join(" ").toLowerCase();
@@ -517,10 +526,10 @@ function card(p,i){
       <a class="ext" href="${esc(p.url)}" target="_blank" rel="noopener" aria-label="在 GitHub 打开" data-stop>
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
     </div>
-    <div class="metarow"><span class="lang">${esc(p.language)}</span><span class="stars" title="${p.rating}/5">${stars(p.rating)}</span><span class="kind">${esc(p.category)}</span></div>
+    <div class="metarow"><span class="lang">${esc(p.language)}</span>${p.rating>0?`<span class="stars" title="${p.rating}/5">${stars(p.rating)}</span>`:""}<span class="kind">${esc(p.category)}</span></div>
     <p class="summary">${esc(p.summary)}</p>
     <div class="tags">${tags}</div>
-    <div class="cardfoot"><span>${p.stars?("★ "+esc(p.stars)):""}</span><span>${esc(p.date)}</span></div>
+    <div class="cardfoot"><span>${kind(p)==="archived"?`<span class="arch">archived</span>`:(p.stars?("★ "+esc(p.stars)):"")}</span><span>${esc(p.date)}</span></div>
   </article>`;
 }
 function render(){
@@ -561,7 +570,7 @@ function openDrawer(slug){
   const p=BY_SLUG[slug]; if(!p) return;
   document.getElementById("dname").textContent=p.name;
   document.getElementById("dmeta").innerHTML=
-    `<span class="lang" style="color:var(--ink)">${esc(p.language)}</span><span class="stars">${stars(p.rating)}</span><span class="kind">${esc(p.category)}</span>${p.stars?`<span class="kind">★ ${esc(p.stars)}</span>`:""}`;
+    `<span class="lang" style="color:var(--ink)">${esc(p.language)}</span>${p.rating>0?`<span class="stars">${stars(p.rating)}</span>`:""}<span class="kind">${esc(p.category)}</span>${p.stars?`<span class="kind">★ ${esc(p.stars)}</span>`:""}${kind(p)==="archived"?`<span class="kind">· archived</span>`:""}`;
   document.getElementById("dlinks").innerHTML=
     `<a class="primary" href="${esc(p.url)}" target="_blank" rel="noopener">在 GitHub 打开 ↗</a>`+
     `<a href="../projects/${esc(p.slug)}.md" target="_blank" rel="noopener">查看原始笔记 .md</a>`;
@@ -596,7 +605,7 @@ document.getElementById("theme").addEventListener("click", ()=>{
   document.documentElement.dataset.theme = next;
   try{ localStorage.setItem("pv-theme", next); }catch(e){}
 });
-document.getElementById("reset").addEventListener("click", ()=>{ state.q=state.lang=state.cat="all"; state.q=""; state.lang="all"; state.cat="all"; state.tag=null; document.getElementById("q").value=""; render(); });
+document.getElementById("reset").addEventListener("click", ()=>{ state.q=""; state.lang="all"; state.cat="all"; state.src="all"; state.tag=null; document.getElementById("q").value=""; render(); });
 
 render();
 </script>
@@ -607,7 +616,7 @@ render();
 
 def build_html(projects, stats):
     fields = ("slug", "name", "url", "language", "category", "tags",
-              "stars", "rating", "status", "date", "summary", "body")
+              "stars", "rating", "status", "via", "date", "summary", "body")
     data = [{k: p.get(k, "") for k in fields} for p in projects]
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     html = HTML_TEMPLATE.replace("__DATA_JSON__", payload).replace("__STATS__", stats)
@@ -623,16 +632,19 @@ def main():
     langs = sorted({p.get("language", "") for p in projects if p.get("language")})
     cats = sorted({p.get("category", "") for p in projects if p.get("category")})
     all_tags = sorted({t for p in projects for t in p.get("tags", [])})
+    curated = sum(1 for p in projects if p.get("source_kind") == "精选")
+    archived = n - curated
     stats = (f"共 {n} 个项目 · {len(langs)} 种语言 · {len(cats)} 个分类 · "
-             f"{len(all_tags)} 个标签")
+             f"{len(all_tags)} 个标签 · 精选 {curated} · 归档 {archived}")
 
     write_page("INDEX.md", "全部项目（按日期）", build_flat(projects), stats)
     write_page("by-language.md", "按语言分类", build_grouped(projects, "language"), stats)
     write_page("by-category.md", "按功能分类", build_grouped(projects, "category"), stats)
     write_page("by-tag.md", "按标签分类", build_grouped(projects, "tags", multi=True), stats)
+    write_page("by-source.md", "按来源（精选/归档）", build_grouped(projects, "source_kind"), stats)
     build_html(projects, stats)
 
-    print(f"[build_index] 已生成 4 个索引页 + vault.html · {stats}")
+    print(f"[build_index] 已生成 5 个索引页 + vault.html · {stats}")
     if warnings:
         print(f"[build_index] {len(warnings)} 条告警：", file=sys.stderr)
         for w in warnings:

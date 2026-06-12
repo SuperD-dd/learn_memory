@@ -1,0 +1,21 @@
+---
+name: LaunchNext
+url: https://github.com/RoversX/LaunchNext
+language: Unknown
+category: Other
+tags: []
+stars: ""
+status: archived
+rating: 0
+date: 2025-10-16
+via: eryajf-weekly
+source: #233 (2025-10-16)
+---
+
+# LaunchNext
+
+> MacOS Tahoe 移除了 Launchpad，这是一款可以替代的开源软件。
+
+## 来源
+- 学习周刊 [#233](https://wiki.eryajf.net/pages/3be804/)（2025-10-16）
+- GitHub：https://github.com/RoversX/LaunchNext

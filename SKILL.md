@@ -94,6 +94,12 @@ Learning-Resource, Other
 
 ---
 
+## 批量导入：学习周刊归档
+
+`scripts/import_eryajf.py` 把 eryajf 学习周刊(wiki.eryajf.net)推荐的项目批量导入为**轻量归档笔记**：frontmatter 带 `via: eryajf-weekly` + `status: archived`，语言/分类用关键词推断，正文为周刊原描述 + 来源期号。它**保护手动精选笔记**（同名或同 URL 的非 archived 笔记不覆盖）。先 `--dry-run` 看量级再正式跑；正式跑只重建索引，**不自动 push**。
+
+`build_index.py` 据 `via/status` 派生「来源」维度：**精选**(手动) vs **归档**(批量)，`vault.html` 顶栏可按来源筛选，并生成 `index/by-source.md`。日常「一起学一个 → 中等笔记」的项目即「精选」，无需特殊处理。
+
 ## 设计约定（勿违背）
 
 - **文件是唯一真相源**；`index/` 与 `vault.config.json` 是派生/本机数据，**已 git 忽略**，不要提交。
